@@ -1093,6 +1093,7 @@ pub const RLIMIT_FSIZE: ::c_int = 1;
 pub const RLIMIT_DATA: ::c_int = 2;
 pub const RLIMIT_STACK: ::c_int = 3;
 pub const RLIMIT_CORE: ::c_int = 4;
+pub const RLIMIT_NOFILE: ::c_int = 7; // Only true on ARM. It's 5 on MIPS!
 pub const RLIMIT_LOCKS: ::c_int = 10;
 pub const RLIMIT_SIGPENDING: ::c_int = 11;
 pub const RLIMIT_MSGQUEUE: ::c_int = 12;
