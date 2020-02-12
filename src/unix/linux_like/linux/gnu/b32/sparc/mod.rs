@@ -1,22 +1,12 @@
-//! SPARC64-specific definitions for 64-bit linux-like values
+//! SPARC-specific definitions for 32-bit linux-like values
 
-use pthread_mutex_t;
-
-pub type c_long = i64;
-pub type c_ulong = u64;
-pub type c_char = i8;
+pub type c_char = u8;
 pub type wchar_t = i32;
-pub type nlink_t = u32;
-pub type blksize_t = i64;
-pub type suseconds_t = i32;
-pub type __u64 = ::c_ulonglong;
 
 s! {
     pub struct sigaction {
         pub sa_sigaction: ::sighandler_t,
         pub sa_mask: ::sigset_t,
-        #[cfg(target_arch = "sparc64")]
-        __reserved0: ::c_int,
         pub sa_flags: ::c_int,
         pub sa_restorer: ::Option<extern fn()>,
     }
@@ -41,14 +31,7 @@ s! {
         pub si_signo: ::c_int,
         pub si_errno: ::c_int,
         pub si_code: ::c_int,
-        #[doc(hidden)]
-        #[deprecated(
-            since="0.2.54",
-            note="Please leave a comment on \
-                  https://github.com/rust-lang/libc/pull/1316 if you're using \
-                  this field"
-        )]
-        pub _pad: [::c_int; 29],
+        _pad: [::c_int; 29],
         _align: [usize; 0],
     }
 
@@ -77,17 +60,16 @@ s! {
 
     pub struct stat {
         pub st_dev: ::dev_t,
-        __pad0: u64,
-        pub st_ino: ::ino_t,
+        pub st_ino: ::ino64_t,
         pub st_mode: ::mode_t,
         pub st_nlink: ::nlink_t,
         pub st_uid: ::uid_t,
         pub st_gid: ::gid_t,
         pub st_rdev: ::dev_t,
-        __pad1: u64,
-        pub st_size: ::off_t,
+        __pad2: ::c_ushort,
+        pub st_size: ::off64_t,
         pub st_blksize: ::blksize_t,
-        pub st_blocks: ::blkcnt_t,
+        pub st_blocks: ::blkcnt64_t,
         pub st_atime: ::time_t,
         pub st_atime_nsec: ::c_long,
         pub st_mtime: ::time_t,
@@ -99,14 +81,13 @@ s! {
 
     pub struct stat64 {
         pub st_dev: ::dev_t,
-        __pad0: u64,
         pub st_ino: ::ino64_t,
         pub st_mode: ::mode_t,
         pub st_nlink: ::nlink_t,
         pub st_uid: ::uid_t,
         pub st_gid: ::gid_t,
         pub st_rdev: ::dev_t,
-        __pad2: ::c_int,
+        __pad2: ::c_ushort,
         pub st_size: ::off64_t,
         pub st_blksize: ::blksize_t,
         pub st_blocks: ::blkcnt64_t,
@@ -164,18 +145,15 @@ s! {
         __f_spare: [::c_int; 6],
     }
 
-    pub struct pthread_attr_t {
-        __size: [u64; 7]
-    }
-
     pub struct ipc_perm {
         pub __key: ::key_t,
         pub uid: ::uid_t,
         pub gid: ::gid_t,
         pub cuid: ::uid_t,
         pub cgid: ::gid_t,
-        pub mode: ::mode_t,
-        __pad0: u16,
+        __pad1: ::c_ushort,
+        pub mode: ::c_ushort,
+        __pad2: ::c_ushort,
         pub __seq: ::c_ushort,
         __unused1: ::c_ulonglong,
         __unused2: ::c_ulonglong,
@@ -183,15 +161,35 @@ s! {
 
     pub struct shmid_ds {
         pub shm_perm: ::ipc_perm,
+        __pad1: ::c_uint,
         pub shm_atime: ::time_t,
+        __pad2: ::c_uint,
         pub shm_dtime: ::time_t,
+        __pad3: ::c_uint,
         pub shm_ctime: ::time_t,
         pub shm_segsz: ::size_t,
         pub shm_cpid: ::pid_t,
         pub shm_lpid: ::pid_t,
         pub shm_nattch: ::shmatt_t,
         __reserved1: ::c_ulong,
-        __reserved2: ::c_ulong
+        __reserved2: ::c_ulong,
+    }
+
+    pub struct msqid_ds {
+        pub msg_perm: ::ipc_perm,
+        __pad1: ::c_uint,
+        pub msg_stime: ::time_t,
+        __pad2: ::c_uint,
+        pub msg_rtime: ::time_t,
+        __pad3: ::c_uint,
+        pub msg_ctime: ::time_t,
+        __msg_cbytes: ::c_ushort,
+        pub msg_qnum: ::msgqnum_t,
+        pub msg_qbytes: ::msglen_t,
+        pub msg_lspid: ::pid_t,
+        pub msg_lrpid: ::pid_t,
+        __glibc_reserved1: ::c_ulong,
+        __glibc_reserved2: ::c_ulong,
     }
 
     pub struct termios2 {
@@ -209,11 +207,11 @@ s! {
 pub const POSIX_FADV_DONTNEED: ::c_int = 4;
 pub const POSIX_FADV_NOREUSE: ::c_int = 5;
 
+pub const RLIM_INFINITY: ::rlim_t = !0;
 pub const VEOF: usize = 4;
 pub const RTLD_DEEPBIND: ::c_int = 0x8;
 pub const RTLD_GLOBAL: ::c_int = 0x100;
 pub const RTLD_NOLOAD: ::c_int = 0x4;
-pub const __SIZEOF_PTHREAD_RWLOCK_T: usize = 56;
 
 pub const TIOCGSOFTCAR: ::c_ulong = 0x40047464;
 pub const TIOCSSOFTCAR: ::c_ulong = 0x80047465;
@@ -457,36 +455,10 @@ pub const SA_NOCLDSTOP: ::c_int = 0x00000008;
 pub const EPOLL_CLOEXEC: ::c_int = 0x400000;
 
 pub const EFD_CLOEXEC: ::c_int = 0x400000;
-pub const __SIZEOF_PTHREAD_CONDATTR_T: usize = 4;
-pub const __SIZEOF_PTHREAD_MUTEX_T: usize = 40;
-pub const __SIZEOF_PTHREAD_MUTEXATTR_T: usize = 4;
-
-align_const! {
-    pub const PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP: ::pthread_mutex_t =
-        pthread_mutex_t {
-            size: [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            ],
-        };
-    pub const PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP: ::pthread_mutex_t =
-        pthread_mutex_t {
-            size: [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            ],
-        };
-    pub const PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP: ::pthread_mutex_t =
-        pthread_mutex_t {
-            size: [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            ],
-        };
-}
 
 pub const O_DIRECTORY: ::c_int = 0o200000;
 pub const O_NOFOLLOW: ::c_int = 0o400000;
+pub const O_LARGEFILE: ::c_int = 0x40000;
 pub const O_DIRECT: ::c_int = 0x100000;
 
 pub const MAP_LOCKED: ::c_int = 0x0100;
@@ -658,8 +630,11 @@ pub const SYS_alarm: ::c_long = 27;
 pub const SYS_sigaltstack: ::c_long = 28;
 pub const SYS_pause: ::c_long = 29;
 pub const SYS_utime: ::c_long = 30;
+pub const SYS_lchown32: ::c_long = 31;
+pub const SYS_fchown32: ::c_long = 32;
 pub const SYS_access: ::c_long = 33;
 pub const SYS_nice: ::c_long = 34;
+pub const SYS_chown32: ::c_long = 35;
 pub const SYS_sync: ::c_long = 36;
 pub const SYS_kill: ::c_long = 37;
 pub const SYS_stat: ::c_long = 38;
@@ -668,6 +643,7 @@ pub const SYS_lstat: ::c_long = 40;
 pub const SYS_dup: ::c_long = 41;
 pub const SYS_pipe: ::c_long = 42;
 pub const SYS_times: ::c_long = 43;
+pub const SYS_getuid32: ::c_long = 44;
 pub const SYS_umount2: ::c_long = 45;
 pub const SYS_setgid: ::c_long = 46;
 pub const SYS_getgid: ::c_long = 47;
@@ -675,9 +651,10 @@ pub const SYS_signal: ::c_long = 48;
 pub const SYS_geteuid: ::c_long = 49;
 pub const SYS_getegid: ::c_long = 50;
 pub const SYS_acct: ::c_long = 51;
-pub const SYS_memory_ordering: ::c_long = 52;
+pub const SYS_getgid32: ::c_long = 53;
 pub const SYS_ioctl: ::c_long = 54;
 pub const SYS_reboot: ::c_long = 55;
+pub const SYS_mmap2: ::c_long = 56;
 pub const SYS_symlink: ::c_long = 57;
 pub const SYS_readlink: ::c_long = 58;
 pub const SYS_execve: ::c_long = 59;
@@ -690,22 +667,32 @@ pub const SYS_msync: ::c_long = 65;
 pub const SYS_vfork: ::c_long = 66;
 pub const SYS_pread64: ::c_long = 67;
 pub const SYS_pwrite64: ::c_long = 68;
+pub const SYS_geteuid32: ::c_long = 69;
+pub const SYS_getegid32: ::c_long = 70;
 pub const SYS_mmap: ::c_long = 71;
+pub const SYS_setreuid32: ::c_long = 72;
 pub const SYS_munmap: ::c_long = 73;
 pub const SYS_mprotect: ::c_long = 74;
 pub const SYS_madvise: ::c_long = 75;
 pub const SYS_vhangup: ::c_long = 76;
+pub const SYS_truncate64: ::c_long = 77;
 pub const SYS_mincore: ::c_long = 78;
 pub const SYS_getgroups: ::c_long = 79;
 pub const SYS_setgroups: ::c_long = 80;
 pub const SYS_getpgrp: ::c_long = 81;
+pub const SYS_setgroups32: ::c_long = 82;
 pub const SYS_setitimer: ::c_long = 83;
+pub const SYS_ftruncate64: ::c_long = 84;
 pub const SYS_swapon: ::c_long = 85;
 pub const SYS_getitimer: ::c_long = 86;
+pub const SYS_setuid32: ::c_long = 87;
 pub const SYS_sethostname: ::c_long = 88;
+pub const SYS_setgid32: ::c_long = 89;
 pub const SYS_dup2: ::c_long = 90;
+pub const SYS_setfsuid32: ::c_long = 91;
 pub const SYS_fcntl: ::c_long = 92;
 pub const SYS_select: ::c_long = 93;
+pub const SYS_setfsgid32: ::c_long = 94;
 pub const SYS_fsync: ::c_long = 95;
 pub const SYS_setpriority: ::c_long = 96;
 pub const SYS_socket: ::c_long = 97;
@@ -719,12 +706,14 @@ pub const SYS_rt_sigpending: ::c_long = 104;
 pub const SYS_rt_sigtimedwait: ::c_long = 105;
 pub const SYS_rt_sigqueueinfo: ::c_long = 106;
 pub const SYS_rt_sigsuspend: ::c_long = 107;
-pub const SYS_setresuid: ::c_long = 108;
-pub const SYS_getresuid: ::c_long = 109;
-pub const SYS_setresgid: ::c_long = 110;
-pub const SYS_getresgid: ::c_long = 111;
+pub const SYS_setresuid32: ::c_long = 108;
+pub const SYS_getresuid32: ::c_long = 109;
+pub const SYS_setresgid32: ::c_long = 110;
+pub const SYS_getresgid32: ::c_long = 111;
+pub const SYS_setregid32: ::c_long = 112;
 pub const SYS_recvmsg: ::c_long = 113;
 pub const SYS_sendmsg: ::c_long = 114;
+pub const SYS_getgroups32: ::c_long = 115;
 pub const SYS_gettimeofday: ::c_long = 116;
 pub const SYS_getrusage: ::c_long = 117;
 pub const SYS_getsockopt: ::c_long = 118;
@@ -764,6 +753,7 @@ pub const SYS_inotify_init: ::c_long = 151;
 pub const SYS_inotify_add_watch: ::c_long = 152;
 pub const SYS_poll: ::c_long = 153;
 pub const SYS_getdents64: ::c_long = 154;
+pub const SYS_fcntl64: ::c_long = 155;
 pub const SYS_inotify_rm_watch: ::c_long = 156;
 pub const SYS_statfs: ::c_long = 157;
 pub const SYS_fstatfs: ::c_long = 158;
@@ -772,7 +762,6 @@ pub const SYS_sched_set_affinity: ::c_long = 160;
 pub const SYS_sched_get_affinity: ::c_long = 161;
 pub const SYS_getdomainname: ::c_long = 162;
 pub const SYS_setdomainname: ::c_long = 163;
-pub const SYS_utrap_install: ::c_long = 164;
 pub const SYS_quotactl: ::c_long = 165;
 pub const SYS_set_tid_address: ::c_long = 166;
 pub const SYS_mount: ::c_long = 167;
@@ -839,6 +828,7 @@ pub const SYS_afs_syscall: ::c_long = 227;
 pub const SYS_setfsuid: ::c_long = 228;
 pub const SYS_setfsgid: ::c_long = 229;
 pub const SYS__newselect: ::c_long = 230;
+pub const SYS_time: ::c_long = 231;
 pub const SYS_splice: ::c_long = 232;
 pub const SYS_stime: ::c_long = 233;
 pub const SYS_statfs64: ::c_long = 234;

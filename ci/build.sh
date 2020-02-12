@@ -15,7 +15,7 @@ RUST=${TOOLCHAIN}
 echo "Testing Rust ${RUST} on ${OS}"
 
 if [ "${TOOLCHAIN}" = "nightly" ] ; then
-    cargo +nightly install cargo-xbuild -Z install-upgrade
+    cargo +nightly install cargo-xbuild
     rustup component add rust-src
 fi
 
@@ -66,6 +66,13 @@ test_target() {
     # Test that libc builds with the `extra_traits` feature
     cargo "+${RUST}" "${BUILD_CMD}" -vv $opt --no-default-features --target "${TARGET}" \
           --features extra_traits
+
+    # Test the 'const-extern-fn' feature on nightly
+    if [ "${RUST}" = "nightly" ]; then
+        cargo "+${RUST}" "${BUILD_CMD}" -vv $opt --no-default-features --target "${TARGET}" \
+          --features const-extern-fn
+    fi
+
 
     # Also test that it builds with `extra_traits` and default features:
     if [ "$NO_STD" != "1" ]; then
@@ -213,6 +220,7 @@ nvptx64-nvidia-cuda \
 powerpc-unknown-linux-gnuspe \
 powerpc-unknown-netbsd \
 powerpc64-unknown-freebsd \
+riscv64gc-unknown-linux-gnu \
 riscv32imac-unknown-none-elf \
 riscv32imc-unknown-none-elf \
 sparc64-unknown-netbsd \

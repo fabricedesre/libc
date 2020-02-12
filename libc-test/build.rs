@@ -322,6 +322,7 @@ fn test_openbsd(target: &str) {
         "ufs/ufs/quota.h",
         "pthread_np.h",
         "sys/syscall.h",
+        "sys/shm.h",
     }
 
     cfg.skip_struct(move |ty| {
@@ -818,6 +819,7 @@ fn test_netbsd(target: &str) {
         "netinet/dccp.h",
         "sys/event.h",
         "sys/quota.h",
+        "sys/shm.h",
     }
 
     cfg.type_name(move |ty, is_struct, is_union| {
@@ -1253,6 +1255,8 @@ fn test_android(target: &str) {
                "linux/memfd.h",
                "linux/module.h",
                "linux/net_tstamp.h",
+               "linux/netfilter/nfnetlink.h",
+               "linux/netfilter/nfnetlink_log.h",
                "linux/netfilter/nf_tables.h",
                "linux/netfilter_ipv4.h",
                "linux/netfilter_ipv6.h",
@@ -2059,7 +2063,6 @@ fn test_linux(target: &str) {
     let i686 = target.contains("i686");
     let mips = target.contains("mips");
     let mips32 = mips && !target.contains("64");
-    let mips32_musl = mips32 && musl;
     let mips64 = mips && target.contains("64");
     let ppc64 = target.contains("powerpc64");
     let s390x = target.contains("s390x");
@@ -2067,6 +2070,7 @@ fn test_linux(target: &str) {
     let x32 = target.contains("x32");
     let x86_32 = target.contains("i686");
     let x86_64 = target.contains("x86_64");
+    let aarch64_musl = target.contains("aarch64") && musl;
 
     let mut cfg = ctest_cfg();
     cfg.define("_GNU_SOURCE", None);
@@ -2130,8 +2134,7 @@ fn test_linux(target: &str) {
                "sys/prctl.h",
                "sys/ptrace.h",
                "sys/quota.h",
-               // FIXME: the mips-musl CI build jobs use ancient musl 1.0.15:
-               [!mips32_musl]: "sys/random.h",
+               "sys/random.h",
                "sys/reboot.h",
                "sys/resource.h",
                "sys/sem.h",
@@ -2185,8 +2188,7 @@ fn test_linux(target: &str) {
         "linux/fs.h",
         "linux/futex.h",
         "linux/genetlink.h",
-        // FIXME: musl version 1.0.15 used by mips build jobs is ancient
-        [!mips32_musl]: "linux/if.h",
+        "linux/if.h",
         "linux/if_addr.h",
         "linux/if_alg.h",
         "linux/if_ether.h",
@@ -2196,6 +2198,8 @@ fn test_linux(target: &str) {
         "linux/memfd.h",
         "linux/module.h",
         "linux/net_tstamp.h",
+        "linux/netfilter/nfnetlink.h",
+        "linux/netfilter/nfnetlink_log.h",
         "linux/netfilter/nf_tables.h",
         "linux/netfilter_ipv4.h",
         "linux/netfilter_ipv6.h",
@@ -2229,6 +2233,9 @@ fn test_linux(target: &str) {
             t if is_union => format!("union {}", t),
 
             t if t.ends_with("_t") => t.to_string(),
+
+            // In MUSL `flock64` is a typedef to `flock`.
+            "flock64" if musl => format!("struct {}", ty),
 
             // put `struct` in front of all structs:.
             t if is_struct => format!("struct {}", t),
@@ -2301,9 +2308,6 @@ fn test_linux(target: &str) {
             // structs.
             "termios2" => true,
 
-            // FIXME: musl version using by mips build jobs 1.0.15 is ancient:
-            "ifmap" | "ifreq" | "ifconf" if mips32_musl => true,
-
             // FIXME: remove once Ubuntu 20.04 LTS is released, somewhere in 2020.
             // ucontext_t added a new field as of glibc 2.28; our struct definition is
             // conservative and omits the field, but that means the size doesn't match for newer
@@ -2347,7 +2351,7 @@ fn test_linux(target: &str) {
             // Require Linux kernel 5.1:
             "F_SEAL_FUTURE_WRITE" => true,
 
-            // The musl version 1.0.22 used in CI does not
+            // The musl version 1.1.24 used in CI does not
             // contain these glibc constants yet:
             | "RLIMIT_RTTIME" // should be in `resource.h`
             | "TCP_COOKIE_TRANSACTIONS"  // should be in the `netinet/tcp.h` header
@@ -2368,10 +2372,6 @@ fn test_linux(target: &str) {
             // FIXME: on musl the pthread types are defined a little differently
             // - these constants are used by the glibc implementation.
             n if musl && n.contains("__SIZEOF_PTHREAD") => true,
-
-            // FIXME: musl version 1.0.15 used by mips build jobs is ancient
-            t if mips32_musl && t.starts_with("IFF") => true,
-            "MFD_HUGETLB" | "AF_XDP" | "PF_XDP" if mips32_musl => true,
 
             _ => false,
         }
@@ -2456,7 +2456,17 @@ fn test_linux(target: &str) {
                                            field == "_pad2" ||
                                            field == "ssi_syscall" ||
                                            field == "ssi_call_addr" ||
-                                           field == "ssi_arch"))
+                                           field == "ssi_arch")) ||
+        // FIXME: After musl 1.1.24, it have only one field `sched_priority`,
+        // while other fields become reserved.
+        (struct_ == "sched_param" && [
+            "sched_ss_low_priority",
+            "sched_ss_repl_period",
+            "sched_ss_init_budget",
+            "sched_ss_max_repl",
+        ].contains(&field) && musl) ||
+        // FIXME: After musl 1.1.24, the type becomes `int` instead of `unsigned short`.
+        (struct_ == "ipc_perm" && field == "__seq" && aarch64_musl)
     });
 
     cfg.skip_roundtrip(move |s| match s {
@@ -2471,6 +2481,7 @@ fn test_linux(target: &str) {
             true
         }
         "ipv6_mreq"
+        | "ip_mreq_source"
         | "sockaddr_in6"
         | "sockaddr_ll"
         | "in_pktinfo"
