@@ -24,6 +24,12 @@ s! {
         pub imr_interface: in_addr,
     }
 
+    pub struct ip_mreq_source {
+        pub imr_multiaddr: in_addr,
+        pub imr_interface: in_addr,
+        pub imr_sourceaddr: in_addr,
+    }
+
     pub struct sockaddr {
         pub sa_family: sa_family_t,
         pub sa_data: [::c_char; 14],
@@ -192,6 +198,16 @@ s! {
     pub struct mmsghdr {
         pub msg_hdr: ::msghdr,
         pub msg_len: ::c_uint,
+    }
+
+    pub struct sock_extended_err {
+        pub ee_errno: u32,
+        pub ee_origin: u8,
+        pub ee_type: u8,
+        pub ee_code: u8,
+        pub ee_pad: u8,
+        pub ee_info: u32,
+        pub ee_data: u32
     }
 }
 
@@ -548,12 +564,12 @@ pub const LC_COLLATE: ::c_int = 3;
 pub const LC_MONETARY: ::c_int = 4;
 pub const LC_MESSAGES: ::c_int = 5;
 pub const LC_ALL: ::c_int = 6;
-pub const LC_CTYPE_MASK: ::c_int = (1 << LC_CTYPE);
-pub const LC_NUMERIC_MASK: ::c_int = (1 << LC_NUMERIC);
-pub const LC_TIME_MASK: ::c_int = (1 << LC_TIME);
-pub const LC_COLLATE_MASK: ::c_int = (1 << LC_COLLATE);
-pub const LC_MONETARY_MASK: ::c_int = (1 << LC_MONETARY);
-pub const LC_MESSAGES_MASK: ::c_int = (1 << LC_MESSAGES);
+pub const LC_CTYPE_MASK: ::c_int = 1 << LC_CTYPE;
+pub const LC_NUMERIC_MASK: ::c_int = 1 << LC_NUMERIC;
+pub const LC_TIME_MASK: ::c_int = 1 << LC_TIME;
+pub const LC_COLLATE_MASK: ::c_int = 1 << LC_COLLATE;
+pub const LC_MONETARY_MASK: ::c_int = 1 << LC_MONETARY;
+pub const LC_MESSAGES_MASK: ::c_int = 1 << LC_MESSAGES;
 // LC_ALL_MASK defined per platform
 
 pub const MAP_FILE: ::c_int = 0x0000;
@@ -810,14 +826,32 @@ pub const IP_RECVTOS: ::c_int = 13;
 pub const IP_RECVERR: ::c_int = 11;
 pub const IP_ADD_MEMBERSHIP: ::c_int = 35;
 pub const IP_DROP_MEMBERSHIP: ::c_int = 36;
+pub const IP_ADD_SOURCE_MEMBERSHIP: ::c_int = 39;
+pub const IP_DROP_SOURCE_MEMBERSHIP: ::c_int = 40;
 pub const IP_TRANSPARENT: ::c_int = 19;
+pub const IPV6_ADDRFORM: ::c_int = 1;
+pub const IPV6_2292PKTINFO: ::c_int = 2;
+pub const IPV6_2292HOPOPTS: ::c_int = 3;
+pub const IPV6_2292DSTOPTS: ::c_int = 4;
+pub const IPV6_2292RTHDR: ::c_int = 5;
+pub const IPV6_2292PKTOPTIONS: ::c_int = 6;
+pub const IPV6_CHECKSUM: ::c_int = 7;
+pub const IPV6_2292HOPLIMIT: ::c_int = 8;
+pub const IPV6_NEXTHOP: ::c_int = 9;
+pub const IPV6_FLOWINFO: ::c_int = 11;
 pub const IPV6_UNICAST_HOPS: ::c_int = 16;
 pub const IPV6_MULTICAST_IF: ::c_int = 17;
 pub const IPV6_MULTICAST_HOPS: ::c_int = 18;
 pub const IPV6_MULTICAST_LOOP: ::c_int = 19;
 pub const IPV6_ADD_MEMBERSHIP: ::c_int = 20;
 pub const IPV6_DROP_MEMBERSHIP: ::c_int = 21;
+pub const IPV6_ROUTER_ALERT: ::c_int = 22;
+pub const IPV6_MTU_DISCOVER: ::c_int = 23;
+pub const IPV6_MTU: ::c_int = 24;
+pub const IPV6_RECVERR: ::c_int = 25;
 pub const IPV6_V6ONLY: ::c_int = 26;
+pub const IPV6_JOIN_ANYCAST: ::c_int = 27;
+pub const IPV6_LEAVE_ANYCAST: ::c_int = 28;
 pub const IPV6_RECVPKTINFO: ::c_int = 49;
 pub const IPV6_PKTINFO: ::c_int = 50;
 pub const IPV6_RECVTCLASS: ::c_int = 66;
@@ -1071,15 +1105,15 @@ pub const IPOPT_CONTROL: u8 = 0x00;
 pub const IPOPT_RESERVED1: u8 = 0x20;
 pub const IPOPT_MEASUREMENT: u8 = 0x40;
 pub const IPOPT_RESERVED2: u8 = 0x60;
-pub const IPOPT_END: u8 = (0 | IPOPT_CONTROL);
-pub const IPOPT_NOOP: u8 = (1 | IPOPT_CONTROL);
-pub const IPOPT_SEC: u8 = (2 | IPOPT_CONTROL | IPOPT_COPY);
-pub const IPOPT_LSRR: u8 = (3 | IPOPT_CONTROL | IPOPT_COPY);
-pub const IPOPT_TIMESTAMP: u8 = (4 | IPOPT_MEASUREMENT);
-pub const IPOPT_RR: u8 = (7 | IPOPT_CONTROL);
-pub const IPOPT_SID: u8 = (8 | IPOPT_CONTROL | IPOPT_COPY);
-pub const IPOPT_SSRR: u8 = (9 | IPOPT_CONTROL | IPOPT_COPY);
-pub const IPOPT_RA: u8 = (20 | IPOPT_CONTROL | IPOPT_COPY);
+pub const IPOPT_END: u8 = 0 | IPOPT_CONTROL;
+pub const IPOPT_NOOP: u8 = 1 | IPOPT_CONTROL;
+pub const IPOPT_SEC: u8 = 2 | IPOPT_CONTROL | IPOPT_COPY;
+pub const IPOPT_LSRR: u8 = 3 | IPOPT_CONTROL | IPOPT_COPY;
+pub const IPOPT_TIMESTAMP: u8 = 4 | IPOPT_MEASUREMENT;
+pub const IPOPT_RR: u8 = 7 | IPOPT_CONTROL;
+pub const IPOPT_SID: u8 = 8 | IPOPT_CONTROL | IPOPT_COPY;
+pub const IPOPT_SSRR: u8 = 9 | IPOPT_CONTROL | IPOPT_COPY;
+pub const IPOPT_RA: u8 = 20 | IPOPT_CONTROL | IPOPT_COPY;
 pub const IPVERSION: u8 = 4;
 pub const MAXTTL: u8 = 255;
 pub const IPDEFTTL: u8 = 64;
@@ -1165,8 +1199,17 @@ pub const ARPHRD_IEEE802154: u16 = 804;
 pub const ARPHRD_VOID: u16 = 0xFFFF;
 pub const ARPHRD_NONE: u16 = 0xFFFE;
 
-fn CMSG_ALIGN(len: usize) -> usize {
-    len + ::mem::size_of::<usize>() - 1 & !(::mem::size_of::<usize>() - 1)
+pub const SO_EE_ORIGIN_NONE: u8 = 0;
+pub const SO_EE_ORIGIN_LOCAL: u8 = 1;
+pub const SO_EE_ORIGIN_ICMP: u8 = 2;
+pub const SO_EE_ORIGIN_ICMP6: u8 = 3;
+pub const SO_EE_ORIGIN_TXSTATUS: u8 = 4;
+pub const SO_EE_ORIGIN_TIMESTAMPING: u8 = SO_EE_ORIGIN_TXSTATUS;
+
+const_fn! {
+    {const} fn CMSG_ALIGN(len: usize) -> usize {
+        len + ::mem::size_of::<usize>() - 1 & !(::mem::size_of::<usize>() - 1)
+    }
 }
 
 f! {
@@ -1182,7 +1225,7 @@ f! {
         cmsg.offset(1) as *mut ::c_uchar
     }
 
-    pub fn CMSG_SPACE(length: ::c_uint) -> ::c_uint {
+    pub {const} fn CMSG_SPACE(length: ::c_uint) -> ::c_uint {
         (CMSG_ALIGN(length as usize) + CMSG_ALIGN(::mem::size_of::<cmsghdr>()))
             as ::c_uint
     }
@@ -1267,6 +1310,10 @@ f! {
 
     pub fn IPTOS_ECN(x: u8) -> u8 {
         x & ::IPTOS_ECN_MASK
+    }
+
+    pub fn SO_EE_OFFENDER(ee: *const ::sock_extended_err) -> *mut ::sockaddr {
+        ee.offset(1) as *mut ::sockaddr
     }
 }
 
@@ -1458,6 +1505,10 @@ extern "C" {
     pub fn acct(filename: *const ::c_char) -> ::c_int;
     pub fn brk(addr: *mut ::c_void) -> ::c_int;
     pub fn sbrk(increment: ::intptr_t) -> *mut ::c_void;
+    #[deprecated(
+        since = "0.2.66",
+        note = "causes memory corruption, see rust-lang/libc#1596"
+    )]
     pub fn vfork() -> ::pid_t;
     pub fn setresgid(rgid: ::gid_t, egid: ::gid_t, sgid: ::gid_t) -> ::c_int;
     pub fn setresuid(ruid: ::uid_t, euid: ::uid_t, suid: ::uid_t) -> ::c_int;

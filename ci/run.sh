@@ -5,7 +5,7 @@
 
 set -ex
 
-MIRRORS_URL="https://rust-lang-ci-mirrors.s3-us-west-1.amazonaws.com/libc"
+MIRRORS_URL="https://ci-mirrors.rust-lang.org/libc"
 
 TARGET="${1}"
 
@@ -89,10 +89,10 @@ if [ "$TARGET" = "x86_64-unknown-linux-gnux32" ]; then
   opt="--release"
 fi
 
-cargo test -vv $opt --no-default-features --manifest-path libc-test/Cargo.toml \
+cargo test $opt --no-default-features --manifest-path libc-test/Cargo.toml \
       --target "${TARGET}"
 
-cargo test -vv $opt --manifest-path libc-test/Cargo.toml --target "${TARGET}"
+cargo test $opt --manifest-path libc-test/Cargo.toml --target "${TARGET}"
 
-cargo test -vv $opt --features extra_traits --manifest-path libc-test/Cargo.toml \
+cargo test $opt --features extra_traits --manifest-path libc-test/Cargo.toml \
       --target "${TARGET}"

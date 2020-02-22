@@ -8,7 +8,7 @@ steps:
       if command -v rustup; then
         # Uncomment when rustup on Azure is updated
         #rustup set profile minimal
-        rustup update $toolchain
+        rustup update --force $toolchain
         rustup default $toolchain
       else
         curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $toolchain --profile=minimal
@@ -45,9 +45,9 @@ steps:
   - bash: |
       set -ex
       gcc -print-search-dirs
-      find "C:\ProgramData\Chocolatey" -name "crt2*"
-      find "C:\ProgramData\Chocolatey" -name "dllcrt2*"
-      find "C:\ProgramData\Chocolatey" -name "libmsvcrt*"
+      /usr/bin/find "C:\ProgramData\Chocolatey" -name "crt2*"
+      /usr/bin/find "C:\ProgramData\Chocolatey" -name "dllcrt2*"
+      /usr/bin/find "C:\ProgramData\Chocolatey" -name "libmsvcrt*"
     condition: eq( variables['Agent.OS'], 'Windows_NT' )	
     displayName: Find GCC libraries (windows)
   - bash: |

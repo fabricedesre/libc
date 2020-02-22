@@ -306,6 +306,21 @@ s! {
         pub ar_pln: u8,
         pub ar_op: u16,
     }
+
+    pub struct shmid_ds {
+        pub shm_perm: ::ipc_perm,
+        pub shm_segsz: ::c_int,
+        pub shm_lpid: ::pid_t,
+        pub shm_cpid: ::pid_t,
+        pub shm_nattch: ::c_short,
+        pub shm_atime: ::time_t,
+        __shm_atimensec: c_long,
+        pub shm_dtime: ::time_t,
+        __shm_dtimensec: c_long,
+        pub shm_ctime: ::time_t,
+        __shm_ctimensec: c_long,
+        pub shm_internal: *mut ::c_void,
+    }
 }
 
 impl siginfo_t {
@@ -1300,8 +1315,8 @@ pub const IFF_LINK1: ::c_int = 0x2000; // per link layer defined bit
 pub const IFF_LINK2: ::c_int = 0x4000; // per link layer defined bit
 pub const IFF_MULTICAST: ::c_int = 0x8000; // supports multicast
 
-pub const PTHREAD_STACK_MIN: ::size_t = (1_usize << _MAX_PAGE_SHIFT);
-pub const MINSIGSTKSZ: ::size_t = (3_usize << _MAX_PAGE_SHIFT);
+pub const PTHREAD_STACK_MIN: ::size_t = 1_usize << _MAX_PAGE_SHIFT;
+pub const MINSIGSTKSZ: ::size_t = 3_usize << _MAX_PAGE_SHIFT;
 pub const SIGSTKSZ: ::size_t = MINSIGSTKSZ + (1_usize << _MAX_PAGE_SHIFT) * 4;
 
 pub const PT_FIRSTMACH: ::c_int = 32;
@@ -1431,6 +1446,15 @@ extern "C" {
         len: ::size_t,
         prot: ::c_int,
     ) -> ::c_int;
+    pub fn pthread_attr_getguardsize(
+        attr: *const ::pthread_attr_t,
+        guardsize: *mut ::size_t,
+    ) -> ::c_int;
+    pub fn pthread_attr_getstack(
+        attr: *const ::pthread_attr_t,
+        stackaddr: *mut *mut ::c_void,
+        stacksize: *mut ::size_t,
+    ) -> ::c_int;
     pub fn pthread_main_np() -> ::c_int;
     pub fn pthread_set_name_np(tid: ::pthread_t, name: *const ::c_char);
     pub fn pthread_stackseg_np(
@@ -1454,6 +1478,12 @@ extern "C" {
         addr: caddr_t,
         data: ::c_int,
     ) -> ::c_int;
+    pub fn memmem(
+        haystack: *const ::c_void,
+        haystacklen: ::size_t,
+        needle: *const ::c_void,
+        needlelen: ::size_t,
+    ) -> *mut ::c_void;
 }
 
 cfg_if! {
